@@ -1,7 +1,9 @@
 import torch.nn as nn
+import torch
+import os
 from model.resModule import ResModule
 from model.hourglass import Hourglass
-from config import CONFIG
+from util.config import CONFIG
 
 
 class MainModel(nn.Module):
@@ -20,29 +22,44 @@ class MainModel(nn.Module):
 
         self.hgArray = nn.ModuleList([])
         self.llArray = nn.ModuleList([])
+        self.linArray = nn.ModuleList([])
+        self.htmapArray = nn.ModuleList([])
+        self.llBarArray = nn.ModuleList([])
+        self.htmapBarArray = nn.ModuleList([])
+
         for i in range(CONFIG.nStacks):
-            self.hgArray.append(Hourglass())
+            self.hgArray.append(Hourglass(CONFIG.nDepth, CONFIG.nFeatures))
             self.llArray.append(
                 nn.ModuleList([ResModule(CONFIG.nFeatures, CONFIG.nFeatures) for _ in range(CONFIG.nModules)]))
+            self.linArray.append(self.lin(CONFIG.nFeatures, CONFIG.nFeatures))
+            self.htmapArray.append(nn.Conv2d(CONFIG.nFeatures, CONFIG.nJoints, kernel_size=1, stride=1, padding=0))
+
+        for i in range(CONFIG.nStacks - 1):
+            self.llBarArray.append(nn.Conv2d(CONFIG.nFeatures, CONFIG.nFeatures, kernel_size=1, stride=1, padding=0))
+            self.htmapBarArray.append(nn.Conv2d(CONFIG.nJoints, CONFIG.nFeatures, kernel_size=1, stride=1, padding=0))
 
     def forward(self, x):
         inter = self.beforeHourglass(x)
         outHeatmap = []
+
         for i in range(CONFIG.nStacks):
             ll = self.hgArray[i](inter)
             for j in range(CONFIG.nModules):
                 ll = self.llArray[i][j](ll)
-            ll = self.lin(ll, CONFIG.nFeatures, CONFIG.nFeatures)
-            htmap = nn.Conv2d(CONFIG.nFeatures, CONFIG.nJoints, kernel_size=1, stride=1, padding=0)(ll)
+            ll = self.linArray[i](ll)
+            htmap = self.htmapArray[i](ll)
             outHeatmap.append(htmap)
 
-            if i < CONFIG.nStacks:
-                ll = nn.Conv2d(CONFIG.nFeatures, CONFIG.nFeatures, kernel_size=1, stride=1, padding=0)(ll)
-                htmap = nn.Conv2d(CONFIG.nJoints, CONFIG.nFeatures, kernel_size=1, stride=1, padding=0)(htmap)
-                inter = inter + ll + htmap
+            if i < CONFIG.nStacks - 1:
+                ll_ = self.llBarArray[i](ll)
+                htmap_ = self.htmapBarArray(htmap)
+                inter = inter + ll_ + htmap_
 
         return outHeatmap
 
-    def lin(self, x, in_channels, out_channels):
-        tmp = nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0)(x)
-        return nn.ReLU()(nn.BatchNorm2d(out_channels)(tmp))
+    def lin(self, in_channels, out_channels):
+        return nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=1, stride=1, padding=0),
+            nn.BatchNorm2d(num_features=out_channels),
+            nn.ReLU()
+        )

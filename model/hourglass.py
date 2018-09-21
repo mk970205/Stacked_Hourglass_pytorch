@@ -1,6 +1,6 @@
 import torch.nn as nn
 from model.resModule import ResModule
-from config import CONFIG
+from util.config import CONFIG
 
 
 class Hourglass(nn.Module):

@@ -8,15 +8,19 @@ class Hourglass(nn.Module):
         super(Hourglass, self).__init__()
         self.hg_depth = hg_depth
         self.nFeatures = nFeatures
-        self.res1 = nn.ModuleList([ResModule(nFeatures, nFeatures) for i in range(CONFIG.nModules)])
-        self.res2 = nn.ModuleList([ResModule(nFeatures, nFeatures) for i in range(CONFIG.nModules)])
-        self.res3 = nn.ModuleList([ResModule(nFeatures, nFeatures) for i in range(CONFIG.nModules)])
+        res1list = [ResModule(nFeatures, nFeatures) for _ in range(CONFIG.nModules)]
+        res2list = [ResModule(nFeatures, nFeatures) for _ in range(CONFIG.nModules)]
+        res3list = [ResModule(nFeatures, nFeatures) for _ in range(CONFIG.nModules)]
+        self.res1 = nn.Sequential(*res1list)
+        self.res2 = nn.Sequential(*res2list)
+        self.res3 = nn.Sequential(*res3list)
         self.subHourglass = None
         self.resWaist = None
         if self.hg_depth > 1:
             self.subHourglass = Hourglass(self.hg_depth - 1, nFeatures)
         else:
-            self.resWaist = nn.ModuleList([ResModule(nFeatures, nFeatures) for i in range(CONFIG.nModules)])
+            res_waist_list = [ResModule(nFeatures, nFeatures) for _ in range(CONFIG.nModules)]
+            self.resWaist = nn.Sequential(*res_waist_list)
 
     def forward(self, x):
         up = self.res1(x)

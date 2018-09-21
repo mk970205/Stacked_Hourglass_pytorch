@@ -1,6 +1,4 @@
 import torch.nn as nn
-import torch
-import os
 from model.resModule import ResModule
 from model.hourglass import Hourglass
 from util.config import CONFIG
@@ -52,7 +50,7 @@ class MainModel(nn.Module):
 
             if i < CONFIG.nStacks - 1:
                 ll_ = self.llBarArray[i](ll)
-                htmap_ = self.htmapBarArray(htmap)
+                htmap_ = self.htmapBarArray[i](htmap)
                 inter = inter + ll_ + htmap_
 
         return outHeatmap

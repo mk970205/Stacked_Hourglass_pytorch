@@ -11,13 +11,13 @@ class ResModule(nn.Module):
         self.resSeq = nn.Sequential(
             nn.BatchNorm2d(in_channels),
             nn.ReLU(),
-            nn.Conv2d(in_channels, out_channels / 2, kernel_size=1),
-            nn.BatchNorm2d(out_channels / 2),
+            nn.Conv2d(in_channels, out_channels // 2, kernel_size=1),
+            nn.BatchNorm2d(out_channels // 2),
             nn.ReLU(),
-            nn.Conv2d(out_channels / 2, out_channels / 2, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm2d(out_channels / 2),
+            nn.Conv2d(out_channels // 2, out_channels // 2, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(out_channels // 2),
             nn.ReLU(),
-            nn.Conv2d(out_channels / 2, out_channels, kernel_size=1)
+            nn.Conv2d(out_channels // 2, out_channels, kernel_size=1)
         )
 
     def forward(self, x):

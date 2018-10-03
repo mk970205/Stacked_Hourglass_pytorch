@@ -8,3 +8,6 @@ class CONFIG:
     nModules = 1
     nJoints = 16
     nDepth = 4
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    parameter_dir = './save/SH'
+    log_dir = './log/'
